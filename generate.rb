@@ -99,9 +99,11 @@ error_types.each do |error_type|
 	end
 	puts title
 	puts ""
+	seen_urls = Set.new
 	all_errors.each do |error|
-		if error.error_type == error_type
+		if error.error_type == error_type and !seen_urls.include?(error.url)
 			puts "- #{error.url} (#{error.retriever} at #{error.time}"
+			seen_urls.add(error.url)
 		end
 	end
 	puts ""
