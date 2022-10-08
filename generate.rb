@@ -14,6 +14,7 @@ Dir.chdir(ANSIBLE_DIR){
 
 ERROR_TYPE_CONNECTION = -1
 ERROR_TYPE_READABILITY = -2
+ERROR_TYPE_CONTENT_TYPE = -3
 
 def parse_time(time_str)
 	return Time.parse(time_str)
@@ -63,6 +64,10 @@ Dir["#{LOG_DIR}/**/*.log*"]. each do |item|
 				parsed_time = parse_time($1)
 				all_errors.push(Error.new($2, $3.to_i, retriever, parsed_time))
 			end
+			if /I, \[([^ ]+) \#[0-9]+\]  INFO -- \: Received bad content type from origin server for (.*)\: (.*)/.match(line)
+				parsed_time = parse_time($1)
+				all_errors.push(Error.new($2, ERROR_TYPE_CONTENT_TYPE, retriever, parsed_time))
+			end
 			if /I, \[[^ ]+ \#[0-9]+\]  INFO -- : Successfully generated webpage text for (.*)/.match(line)
 				successfully_retrieved_urls.add($1)
 			end
@@ -96,6 +101,8 @@ error_types.each do |error_type|
 		title = "Parsing / Generation Error"
 	elsif error_type == ERROR_TYPE_CONNECTION
 		title = "Connection Error"
+	elsif error_type == ERROR_TYPE_CONTENT_TYPE
+		title = "Bad Content Type"
 	end
 	puts title
 	puts ""
