@@ -17,7 +17,7 @@ ERROR_TYPE_READABILITY = -2
 ERROR_TYPE_CONTENT_TYPE = -3
 
 def parse_time(time_str)
-	return Time.parse(time_str)
+	return Time.parse("#{time_str} UTC")
 end
 
 class Error
@@ -36,8 +36,6 @@ class Error
 
 end
 
-
-#			if /E, \[([^ ]+) [^\]+\] ERROR -- \: Connection error for article with url (.*)/.match(line)
 
 num_success = 0
 all_errors = Array.new
