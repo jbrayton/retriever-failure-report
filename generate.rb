@@ -26,12 +26,14 @@ class Error
 	attr_accessor :error_type
 	attr_accessor :retriever
 	attr_accessor :time
+	attr_accessor :error_message
 	
-	def initialize( url, error_type, retriever, time )
+	def initialize( url, error_type, retriever, time, error_message = nil )
 		@url = url
 		@error_type = error_type
 		@retriever = retriever
 		@time = time
+		@error_message = error_message
 	end
 
 end
@@ -50,9 +52,9 @@ Dir["#{LOG_DIR}/**/*.log*"]. each do |item|
 	end
 	if !reader.nil?
 		reader.each_line do |line|
-			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Connection error for article with url (.*)/.match(line)
+			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Connection error for article with url (.*) \- (.*)/.match(line)
 				parsed_time = parse_time($1)
-				all_errors.push(Error.new($2, ERROR_TYPE_CONNECTION, retriever, parsed_time))
+				all_errors.push(Error.new($2, ERROR_TYPE_CONNECTION, retriever, parsed_time, $3))
 			end
 			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Readability error for (.*)/.match(line)
 				parsed_time = parse_time($1)
@@ -107,7 +109,11 @@ error_types.each do |error_type|
 	seen_urls = Set.new
 	all_errors.each do |error|
 		if error.error_type == error_type and !seen_urls.include?(error.url)
-			puts "- #{error.url} (#{error.retriever} at #{error.time}"
+			if !error.error_message.nil?
+				puts "- #{error.url} (#{error.retriever} at #{error.time} - #{error.error_message}"
+			else
+				puts "- #{error.url} (#{error.retriever} at #{error.time}"
+			end
 			seen_urls.add(error.url)
 		end
 	end
