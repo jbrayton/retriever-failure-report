@@ -2,6 +2,7 @@ require 'fileutils'
 require 'zlib'
 require 'time'
 require 'set'
+require 'uri'
 
 ANSIBLE_DIR = "/Users/jbrayton/Documents/ansible-scripts"
 LOG_DIR = "/Users/jbrayton/Documents/ansible-scripts/retriever_logs"
@@ -56,9 +57,9 @@ Dir["#{LOG_DIR}/**/*.log*"]. each do |item|
 				parsed_time = parse_time($1)
 				all_errors.push(Error.new($2, ERROR_TYPE_CONNECTION, retriever, parsed_time, $3))
 			end
-			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Readability error for (.*)/.match(line)
+			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Readability error for (.*) \-\- (.*)/.match(line)
 				parsed_time = parse_time($1)
-				all_errors.push(Error.new($2, ERROR_TYPE_READABILITY, retriever, parsed_time))
+				all_errors.push(Error.new($2, ERROR_TYPE_READABILITY, retriever, parsed_time, $3))
 			end
 			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Unexpected status code for (.*): ([0-9]+)/.match(line)
 				parsed_time = parse_time($1)
@@ -95,6 +96,34 @@ all_errors.each do |error|
 end
 error_types = error_types.to_a.sort
 
+errors_by_type = Hash.new
+error_types.each do |error_type|
+	seen_urls = Set.new
+	errors_by_host = Hash.new
+	all_errors.each do |error|
+		if error.error_type == error_type and !seen_urls.include?(error.url)
+			host = "unknown"
+			begin
+				uri = URI(error.url)
+				if !uri.host.nil? and uri.host.length > 0
+					host = uri.host
+				end
+			rescue => e
+				puts "e: #{e}"
+			end
+			errors = errors_by_host[host]
+			if errors.nil?
+				errors = Array.new
+			end
+			errors.push(error)
+			errors_by_host[host] = errors
+		end
+	end
+	errors_by_type[error_type] = errors_by_host
+end
+
+
+
 error_types.each do |error_type|
 	title = "Status Code #{error_type}"
 	if error_type == ERROR_TYPE_READABILITY
@@ -106,19 +135,50 @@ error_types.each do |error_type|
 	end
 	puts title
 	puts ""
-	seen_urls = Set.new
-	all_errors.each do |error|
-		if error.error_type == error_type and !seen_urls.include?(error.url)
+	
+	hosts = errors_by_type[error_type].keys
+	errors_by_type[error_type].each do |host,errors|
+		retrievers = Set.new
+		errors.each do |error|
+			retrievers.add(error.retriever)
+		end
+		puts "- #{host} - #{errors.length} errors, retrievers: #{retrievers.to_a.sort}"
+		errors.each do |error|
 			if !error.error_message.nil?
-				puts "- #{error.url} (#{error.retriever} at #{error.time} - #{error.error_message}"
+				puts "    - #{error.url} (#{error.retriever} at #{error.time.getlocal} - #{error.error_message}"
 			else
-				puts "- #{error.url} (#{error.retriever} at #{error.time}"
+				puts "    - #{error.url} (#{error.retriever} at #{error.time.getlocal}"
 			end
-			seen_urls.add(error.url)
 		end
 	end
 	puts ""
 	puts ""
-end
+end 
 
+# error_types.each do |error_type|
+# 	title = "Status Code #{error_type}"
+# 	if error_type == ERROR_TYPE_READABILITY
+# 		title = "Parsing / Generation Error"
+# 	elsif error_type == ERROR_TYPE_CONNECTION
+# 		title = "Connection Error"
+# 	elsif error_type == ERROR_TYPE_CONTENT_TYPE
+# 		title = "Bad Content Type"
+# 	end
+# 	puts title
+# 	puts ""
+# 	seen_urls = Set.new
+# 	all_errors.each do |error|
+# 		if error.error_type == error_type and !seen_urls.include?(error.url)
+# 			if !error.error_message.nil?
+# 				puts "- #{error.url} (#{error.retriever} at #{error.time} - #{error.error_message}"
+# 			else
+# 				puts "- #{error.url} (#{error.retriever} at #{error.time}"
+# 			end
+# 			seen_urls.add(error.url)
+# 		end
+# 	end
+# 	puts ""
+# 	puts ""
+# end
+# 
 
