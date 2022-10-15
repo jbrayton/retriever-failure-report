@@ -117,6 +117,7 @@ error_types.each do |error_type|
 			end
 			errors.push(error)
 			errors_by_host[host] = errors
+			seen_urls.add(error.url)
 		end
 	end
 	errors_by_type[error_type] = errors_by_host
