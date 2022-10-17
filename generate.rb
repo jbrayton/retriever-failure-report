@@ -53,7 +53,7 @@ Dir["#{LOG_DIR}/**/*.log*"]. each do |item|
 	end
 	if !reader.nil?
 		reader.each_line do |line|
-			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Connection error for article with url (.*) \- (.*)/.match(line)
+			if /E, \[([^ ]+) \#[0-9]+\] ERROR -- \: Connection error for article with url ([^ ]*) \- (.*)/.match(line)
 				parsed_time = parse_time($1)
 				all_errors.push(Error.new($2, ERROR_TYPE_CONNECTION, retriever, parsed_time, $3))
 			end
