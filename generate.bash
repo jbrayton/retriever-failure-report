@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
-bundle exec ruby generate.rb > report.txt
+bundle exec ruby script.rb > report.txt
 bbedit report.txt

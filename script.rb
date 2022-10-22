@@ -123,7 +123,34 @@ error_types.each do |error_type|
 	errors_by_type[error_type] = errors_by_host
 end
 
+error_types.each do |error_type|
+	title = "Status Code #{error_type}"
+	if error_type == ERROR_TYPE_READABILITY
+		title = "Parsing / Generation Error"
+	elsif error_type == ERROR_TYPE_CONNECTION
+		title = "Connection Error"
+	elsif error_type == ERROR_TYPE_CONTENT_TYPE
+		title = "Bad Content Type"
+	end
+	puts title
+	puts ""
+	
+	hosts = errors_by_type[error_type].keys
+	errors_by_type[error_type].each do |host,errors|
+		retrievers = Set.new
+		errors.each do |error|
+			retrievers.add(error.retriever)
+		end
+		puts "- #{host} - #{errors.length} errors, #{retrievers.length} retrievers: #{retrievers.to_a.sort}"
+	end
+	puts ""
+	puts ""
+end 
 
+
+puts
+puts "--- Error Details ---"
+puts
 
 error_types.each do |error_type|
 	title = "Status Code #{error_type}"
