@@ -123,29 +123,42 @@ error_types.each do |error_type|
 	errors_by_type[error_type] = errors_by_host
 end
 
-error_types.each do |error_type|
-	title = "Status Code #{error_type}"
-	if error_type == ERROR_TYPE_READABILITY
-		title = "Parsing / Generation Error"
-	elsif error_type == ERROR_TYPE_CONNECTION
-		title = "Connection Error"
-	elsif error_type == ERROR_TYPE_CONTENT_TYPE
-		title = "Bad Content Type"
+
+2.times do |i|
+	puts "---"
+	puts
+	if i == 0
+		puts "Most Noteworthy Errors"
+	else
+		puts "Error summaries"
 	end
-	puts title
-	puts ""
-	
-	hosts = errors_by_type[error_type].keys
-	errors_by_type[error_type].each do |host,errors|
-		retrievers = Set.new
-		errors.each do |error|
-			retrievers.add(error.retriever)
+	puts
+	error_types.each do |error_type|
+		title = "Status Code #{error_type}"
+		if error_type == ERROR_TYPE_READABILITY
+			title = "Parsing / Generation Error"
+		elsif error_type == ERROR_TYPE_CONNECTION
+			title = "Connection Error"
+		elsif error_type == ERROR_TYPE_CONTENT_TYPE
+			title = "Bad Content Type"
 		end
-		puts "- #{host} - #{errors.length} errors, #{retrievers.length} retrievers: #{retrievers.to_a.sort}"
-	end
-	puts ""
-	puts ""
-end 
+		puts title
+		puts ""
+	
+		hosts = errors_by_type[error_type].keys
+		errors_by_type[error_type].each do |host,errors|
+			retrievers = Set.new
+			errors.each do |error|
+				retrievers.add(error.retriever)
+			end
+			if (i == 1) or ((retrievers.length < 4) and (errors.length > 4*retrievers.length)) or (errors.length > 20) or (error_type == ERROR_TYPE_READABILITY)
+				puts "- #{host} - #{errors.length} errors, #{retrievers.length} retrievers: #{retrievers.to_a.sort}"
+			end
+		end
+		puts ""
+		puts ""
+	end 
+end
 
 
 puts
